@@ -1,0 +1,57 @@
+version: '3.9'
+
+services:
+
+  redis-master:
+    container_name: redis-master
+    image: redis:latest
+    volumes:
+      - "./.data:/data"
+      - "./redis.conf:/usr/local/etc/redis/redis.conf"
+    command: redis-server --include /usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+
+  redis-slave:
+    image: redis:latest
+    command: redis-server --slaveof redis-master 6379 --include /usr/local/etc/redis/redis.conf
+    links:
+      - redis-master
+    volumes:
+      - "./.data:/data"
+      - "./redis.conf:/usr/local/etc/redis/redis.conf"
+    depends_on:
+      - redis-master
+
+  # Instance 1
+  redis-sentinel:
+    restart: unless-stopped
+    build:
+      context: ./redis-sentinel
+    links:
+      - redis-master
+    depends_on:
+      - redis-master
+      - redis-slave
+
+  # Instance 2
+  redis-sentinel2:
+    restart: unless-stopped
+    build:
+      context: ./redis-sentinel
+    links:
+      - redis-master
+    depends_on:
+      - redis-master
+      - redis-slave
+
+  # Instance 3
+  redis-sentinel3:
+    restart: unless-stopped
+    build:
+      context: ./redis-sentinel
+    links:
+      - redis-master
+    depends_on:
+      - redis-master
+      - redis-slave
